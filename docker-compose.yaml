@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: dockerfile-backend           # change only if your backend Dockerfile has a different name
+    image: ares-backend:v1
+    container_name: assignment_backend
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    environment:
+      - FLASK_ENV=production
+    volumes:
+      - ./backend/data:/app/data   # optional: uncomment if you use file persistence; create folder if used
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: dockerfile-frontend   # <-- if you renamed it to Dockerfile, change this to Dockerfile
+    image: ares-frontend:latest
+    container_name: assignment_frontend
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_healthy
+    environment:
+      - BACKEND_URL=http://backend:5000/api/submit
