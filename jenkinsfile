@@ -2,7 +2,6 @@ pipeline {
     agent any
 
     stages {
-
         stage('Checkout Code') {
             steps {
                 checkout scm
@@ -12,7 +11,7 @@ pipeline {
         stage('Ensure Backend Running') {
             steps {
                 sh '''
-                pm2 start backend/app.py \
+                sudo -u ubuntu /usr/local/bin/pm2 start backend/app.py \
                   --name flask \
                   --interpreter backend/venv/bin/python \
                   || true
@@ -23,7 +22,7 @@ pipeline {
         stage('Ensure Frontend Running') {
             steps {
                 sh '''
-                pm2 start frontend/server.js \
+                sudo -u ubuntu /usr/local/bin/pm2 start frontend/server.js \
                   --name express \
                   || true
                 '''
@@ -33,15 +32,15 @@ pipeline {
         stage('Restart Applications') {
             steps {
                 sh '''
-                pm2 restart flask
-                pm2 restart express
+                sudo -u ubuntu /usr/local/bin/pm2 restart flask
+                sudo -u ubuntu /usr/local/bin/pm2 restart express
                 '''
             }
         }
 
         stage('Save PM2 State') {
             steps {
-                sh 'pm2 save'
+                sh 'sudo -u ubuntu /usr/local/bin/pm2 save'
             }
         }
     }
