@@ -9,22 +9,32 @@ pipeline {
             }
         }
 
-        stage('Restart Backend') {
+        stage('Ensure Backend Running') {
             steps {
                 sh '''
-                pm2 describe flask >/dev/null 2>&1 \
-                  && pm2 restart flask \
-                  || echo "Flask process not found"
+                pm2 start backend/app.py \
+                  --name flask \
+                  --interpreter backend/venv/bin/python \
+                  || true
                 '''
             }
         }
 
-        stage('Restart Frontend') {
+        stage('Ensure Frontend Running') {
             steps {
                 sh '''
-                pm2 describe express >/dev/null 2>&1 \
-                  && pm2 restart express \
-                  || echo "Express process not found"
+                pm2 start frontend/server.js \
+                  --name express \
+                  || true
+                '''
+            }
+        }
+
+        stage('Restart Applications') {
+            steps {
+                sh '''
+                pm2 restart flask
+                pm2 restart express
                 '''
             }
         }
