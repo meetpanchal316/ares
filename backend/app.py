@@ -17,6 +17,7 @@ def submit():
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip()
     phone = (data.get("phone") or "").strip()
+    city = (data.get("city") or "").strip()
     age = data.get("age")
     message = (data.get("message") or "").strip()
 
@@ -30,6 +31,10 @@ def submit():
 
     if not phone or not PHONE_RE.match(phone):
         errors.append("Phone number must be a valid 10-digit number.")
+    
+    if not city:
+        errors.append("City is required.")
+
 
     try:
         age_int = int(age)
@@ -51,6 +56,7 @@ def submit():
         "name": name,
         "email": email,
         "phone": phone,
+        "city": city,
         "age": age_int,
         "message": message,
         "received_at": datetime.utcnow().isoformat() + "Z"
