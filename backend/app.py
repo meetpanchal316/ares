@@ -4,15 +4,19 @@ from flask_cors import CORS
 import re
 
 app = Flask(__name__)
-CORS(app)  # safe: allows cross-origin if frontend calls backend directly
+CORS(app)  # allows cross-origin if frontend calls backend directly
 
 EMAIL_RE = re.compile(r"^[^@]+@[^@]+\.[^@]+$")
+PHONE_RE = re.compile(r"^[0-9]{10}$")  # simple 10-digit phone validation
+
 
 @app.route("/api/submit", methods=["POST"])
 def submit():
     data = request.get_json() or {}
+
     name = (data.get("name") or "").strip()
     email = (data.get("email") or "").strip()
+    phone = (data.get("phone") or "").strip()
     age = data.get("age")
     message = (data.get("message") or "").strip()
 
@@ -20,8 +24,13 @@ def submit():
 
     if not name:
         errors.append("Name is required.")
+
     if not email or not EMAIL_RE.match(email):
         errors.append("A valid email is required.")
+
+    if not phone or not PHONE_RE.match(phone):
+        errors.append("Phone number must be a valid 10-digit number.")
+
     try:
         age_int = int(age)
         if age_int <= 0:
@@ -33,19 +42,24 @@ def submit():
         errors.append("Message is required.")
 
     if errors:
-        return jsonify({"error": "validation_failed", "details": errors}), 400
+        return jsonify({
+            "error": "validation_failed",
+            "details": errors
+        }), 400
 
-    # Example "processing": here you would save to DB / queue / etc.
     submission = {
         "name": name,
         "email": email,
+        "phone": phone,
         "age": age_int,
         "message": message,
         "received_at": datetime.utcnow().isoformat() + "Z"
     }
 
-    # For demonstration we just echo back the submission
-    return jsonify({"message": "Form received", "submission": submission}), 200
+    return jsonify({
+        "message": "Form received",
+        "submission": submission
+    }), 200
 
 
 @app.get("/health")
@@ -54,5 +68,5 @@ def health():
 
 
 if __name__ == "__main__":
-    # Development only; in Docker we'll use gunicorn
+    # Development only; production is handled by pm2 / gunicorn
     app.run(host="0.0.0.0", port=5000, debug=False)
