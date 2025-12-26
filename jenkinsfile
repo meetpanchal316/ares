@@ -9,35 +9,29 @@ pipeline {
             }
         }
 
-        stage('Backend Setup') {
-            steps {
-                dir('backend') {
-                    sh '''
-                    if [ ! -d "venv" ]; then
-                        python3 -m venv venv
-                    fi
-                    . venv/bin/activate
-                    pip install -r requirements.txt
-                    '''
-                }
-            }
-        }
-
-        stage('Frontend Setup') {
-            steps {
-                dir('frontend') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Restart Applications') {
+        stage('Restart Backend') {
             steps {
                 sh '''
-                pm2 restart flask || pm2 start backend/app.py --name flask --interpreter backend/venv/bin/python
-                pm2 restart express || pm2 start frontend/server.js --name express
-                pm2 save
+                pm2 describe flask >/dev/null 2>&1 \
+                  && pm2 restart flask \
+                  || echo "Flask process not found"
                 '''
+            }
+        }
+
+        stage('Restart Frontend') {
+            steps {
+                sh '''
+                pm2 describe express >/dev/null 2>&1 \
+                  && pm2 restart express \
+                  || echo "Express process not found"
+                '''
+            }
+        }
+
+        stage('Save PM2 State') {
+            steps {
+                sh 'pm2 save'
             }
         }
     }
